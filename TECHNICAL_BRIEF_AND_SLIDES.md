@@ -16,7 +16,7 @@ We use **FastAPI (Python)** instead of Node.js for one critical reason: **Data S
 *   **Type Safety**: It uses Python's type hints to automatically valid data (Pydantic). If the frontend sends junk data, FastAPI rejects it instantly before it crashes our logic.
 
 ### 3. The AI Brain: Google Gemini Integration
-We are not training a model from scratch; we are "Prompt Engineering" **Google Gemini 1.5 Flash**.
+We are not training a model from scratch; we are "Prompt Engineering" **Google Gemini 3 Flash**.
 *   **The Model**: We chose `gemini-flash-latest` because it has a massive *context window* (it can read many pages at once) and is extremely fast/cheap.
 *   **The System Prompt**: We don't just ask "summarize this." We feed it a strict "System Persona." We tell Gemini: *"You are an expert exam analyst. Count exactly how many papers are uploaded. If a topic appears in 2 out of 3 papers, mark it as 'High Yield'."*
 *   **Handling Limits**: We simply await the response. Gemini manages the heavy lifting. We parse the raw text back into JSON so our frontend can render it as a table, not just a block of text.
@@ -57,13 +57,13 @@ We are not training a model from scratch; we are "Prompt Engineering" **Google G
 *   **Prediction Engine**: Generates a mock "Shadow Paper" composed of the highest probability questions for self-testing.
 
 ### Slide 6: Google Technologies Used
-*   **Google Gemini API**: Utilizing the **`gemini-1.5-flash`** model for rapid, high-context document analysis.
+*   **Google Gemini API**: Utilizing the **`gemini-3-flash`** model for rapid, high-context document analysis.
 *   **Google AI Studio**: Used for prompt engineering and strict output schema tuning.
 *   **Google Generative AI SDK (Python)**: For seamless integration with our backend structure.
 
 ### Slide 9: Architecture Description
 **Flow**:
-"Client (Next.js/React) sends PDFs → FastAPI Server (Python) → **Google Gemini 1.5 Flash** (Vision & Context Analysis) → Structured JSON Probability Data → Frontend Visualization (Interactive Matrix)."
+"Client (Next.js/React) sends PDFs → FastAPI Server (Python) → **Google Gemini 3 Flash** (Vision & Context Analysis) → Structured JSON Probability Data → Frontend Visualization (Interactive Matrix)."
 
 ### Slide 11: Future Development
 1.  **Multi-Modal Handwritten Analysis**: allowing students to upload photos of their own class notes for personalized gap analysis.
