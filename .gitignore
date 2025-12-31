@@ -40,3 +40,4 @@ backend/temp_uploads/
 backend/venv/
 backend/.venv/
 backend/env/
+node_modules
