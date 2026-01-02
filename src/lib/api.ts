@@ -1,6 +1,6 @@
 import { Topic, MOCK_RESULTS } from "./mock-data";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = 'https://exam-trace.onrender.com';
 
 /**
  * Analyzes uploaded papers using the backend API.
