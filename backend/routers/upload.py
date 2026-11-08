@@ -3,7 +3,7 @@ import shutil
 import os
 import uuid
 from datetime import datetime
-from services.gemini_service import analyze_document
+from services.gemini_service import analyze_document, public_error_message, redact_secrets
 
 import tempfile
 
@@ -35,14 +35,16 @@ async def upload_file(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+            print(f"[ERROR] Failed to save upload: {redact_secrets(str(e))}")
+            raise HTTPException(status_code=500, detail="Failed to save the uploaded file.")
 
         # Analyze with Gemini
         try:
             analysis_result = analyze_document(file_path, paper_count)
         except Exception as e:
             # Return partial error but don't crash
-            analysis_result = [{"topic": "Analysis Error", "probability": 0, "frequency": f"0/{paper_count}", "reasoning": str(e)}]
+            print(f"[ERROR] analyze_document raised: {redact_secrets(str(e))}")
+            analysis_result = [{"topic": "Analysis Error", "probability": 0, "frequency": f"0/{paper_count}", "reasoning": public_error_message(e)}]
 
         return {
             "filename": filename,
