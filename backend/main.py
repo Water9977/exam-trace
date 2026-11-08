@@ -6,14 +6,10 @@ import os
 
 app = FastAPI()
 
-# Create temp_uploads directory if it doesn't exist
-os.makedirs("temp_uploads", exist_ok=True)
 
 # CORS Configuration
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# Allow ALL origins for Hackathon/Demo flexibility
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
