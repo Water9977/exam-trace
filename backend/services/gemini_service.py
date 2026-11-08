@@ -2,6 +2,7 @@ import google.generativeai as genai
 import os
 import time
 import json
+import re
 from dotenv import load_dotenv
 from typing import List, Dict, Any
 
@@ -18,6 +19,26 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 else:
     print("WARNING: GEMINI_API_KEY not found in environment variables.")
+
+
+def redact_secrets(text: str) -> str:
+    """Strip the API key from text before it is logged or returned to a client.
+
+    Google client errors embed the request URL, which contains `key=<API key>`.
+    """
+    if GEMINI_API_KEY:
+        text = text.replace(GEMINI_API_KEY, "[REDACTED]")
+    return re.sub(r"(key=)[^&\s\"']+", r"\1[REDACTED]", text)
+
+
+def public_error_message(error: Exception) -> str:
+    """Map an exception to a short message that is safe to show to users."""
+    text = str(error).lower()
+    if "api_key_invalid" in text or "api key not valid" in text:
+        return "The server's Gemini API key is invalid. The site owner needs to update it."
+    if "429" in text or "quota" in text or "resource exhausted" in text or "resourceexhausted" in text:
+        return "The AI service is rate-limited right now. Please try again in a minute."
+    return "Analysis failed. Please try again."
 
 def analyze_document(file_path: str, paper_count: int = 3) -> List[Dict[str, Any]]:
     """
@@ -139,7 +160,7 @@ Extract 6-10 most important topics. Be factual and based only on the document co
                             model_used = FALLBACK_MODEL_2
                             print(f"[SUCCESS] Analysis completed with {FALLBACK_MODEL_2}")
                         except Exception as fallback2_error:
-                            print(f"[ERROR] All models failed. Final error: {fallback2_error}")
+                            print(f"[ERROR] All models failed. Final error: {redact_secrets(str(fallback2_error))}")
                             raise fallback2_error
                     else:
                         # Fallback 1 failed for non-rate-limit reason
@@ -210,13 +231,15 @@ Extract 6-10 most important topics. Be factual and based only on the document co
             }]
 
     except Exception as e:
-        print(f"[CRITICAL ERROR] analyze_document failed: {type(e).__name__}: {e}")
         import traceback
-        traceback.print_exc()
-        
+        print(f"[CRITICAL ERROR] analyze_document failed: {type(e).__name__}")
+        print(redact_secrets(traceback.format_exc()))
+
+        # The raw exception text can contain the API key, so only a safe
+        # summary goes back to the client.
         return [{
             "topic": "System Error",
             "probability": 0,
             "frequency": "0/0 Years",
-            "reasoning": f"Analysis failed: {str(e)}"
+            "reasoning": public_error_message(e)
         }]
