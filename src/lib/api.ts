@@ -1,6 +1,10 @@
 import { Topic, MOCK_RESULTS } from "./mock-data";
 
-const API_BASE_URL = 'https://exam-trace.onrender.com';
+// Same-origin by default: vercel.json routes /api/* to the FastAPI service.
+// Set NEXT_PUBLIC_API_URL (including the /api prefix, e.g.
+// http://localhost:8000/api) to talk to a backend running elsewhere.
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") || "/api";
 
 /**
  * Analyzes uploaded papers using the backend API.
