@@ -1,65 +1,31 @@
-# 🚀 Zero-to-Live: Deployment Guide
+# Deployment Guide
 
-Follow these exact steps to make **Exam Trace** live on the internet.
+Exam Trace deploys to Vercel as one project with two services, defined in [`vercel.json`](vercel.json):
 
----
+| Service   | Root       | Framework | Public path |
+|-----------|------------|-----------|-------------|
+| `app`     | `.`        | Next.js   | `/*`        |
+| `backend` | `backend/` | FastAPI   | `/api/*`    |
 
-## Part 1: Final Code Push
-First, we need to push the "Cloud-Ready" changes I just made to GitHub.
+Vercel sends the original request path to a service without stripping the prefix, so the backend mounts all routes under `/api` (`backend/main.py`). The browser calls `/api/upload` on the same domain, so no CORS or backend URL setup is needed in production.
 
-1.  Open Terminal in VS Code.
-2.  Run these commands:
-    ```bash
-    git add .
-    git commit -m "Make backend cloud-ready for Render"
-    git push
-    ```
+## Deploy
 
----
+1. Push the repo to GitHub and import it in Vercel (root directory `.`).
+2. In Project Settings, add the environment variable `GEMINI_API_KEY`.
+3. Deploy, then open the production URL.
 
-## Part 2: Deploy Backend (Render.com)
+## Verify
 
-1.  Go to [dashboard.render.com](https://dashboard.render.com/) and create a free account.
-2.  Click **"New +"** -> **"Web Service"**.
-3.  Connect your GitHub account and select your `exam-trace` repository.
-4.  **Configuration Settings:**
-    *   **Name:** `exam-trace-api` (or similar)
-    *   **Region:** Closest to you (e.g., Singapore/Frankfurt/US)
-    *   **Branch:** `master`
-    *   **Root Directory:** `backend` (Important! Type exactly `backend`)
-    *   **Runtime:** `Python 3`
-    *   **Build Command:** `pip install -r requirements.txt`
-    *   **Start Command:** `uvicorn main:app --host 0.0.0.0 --port 10000`
-    *   **Instance Type:** Free
-5.  **Environment Variables (Crucial!):**
-    *   Scroll down to "Environment Variables".
-    *   Key: `GEMINI_API_KEY`
-    *   Value: `Paste_Your_Actual_Google_Gemini_Key_Here`
-    *   Key: `PYTHON_VERSION`
-    *   Value: `3.10.0` (Recommended)
-6.  Click **"Create Web Service"**.
-7.  Wait 5 minutes. It will eventually give you a URL like: `https://exam-trace-api.onrender.com`.
-    *   **Copy this URL.** You need it for the frontend.
+- `GET https://<your-domain>/api/health` returns `{"status":"ok"}`.
+- Upload a PDF in the app. If you always see the same sample topics, the frontend is falling back to built-in mock data because `/api/upload` failed. Check the Network tab and the backend function logs.
 
----
+## Limits
 
-## Part 3: Deploy Frontend (Vercel)
+- Request bodies are capped at 4.5 MB per Vercel Function, so larger PDFs get a 413 error.
+- Function duration defaults to 300 s on the Hobby plan, which is enough for a Gemini analysis.
 
-1.  Go to [vercel.com](https://vercel.com/) and create a free account.
-2.  Click **"Add New..."** -> **"Project"**.
-3.  Import your `exam-trace` repository.
-4.  **Framework Preset:** Next.js (Should auto-detect).
-5.  **Root Directory:** Edit this! Select `exam-trace` (root) if not already selected.
-6.  **Environment Variables:**
-    *   We currently hardcoded `http://localhost:8000` in the frontend code.
-    *   **STOP!** We need to update one file in your code before you deploy this.
-    
-    *I will explain this in the chat because we need to replace `localhost:8000` with your new Render URL in `src/lib/api.ts`.*
+## Local development
 
----
-
-## Part 4: The Final Connection
-
-Once you have your **Render Backend URL** (from Part 2), tell me immediately.
-I will verify where `localhost:8000` is used in your frontend code and update it to point to your new live backend.
-Then you can deploy the Vercel frontend.
+- `vercel dev` runs both services together (`vercel dev -L` works without logging in).
+- Or run them separately: `uvicorn main:app --reload --port 8000` in `backend/`, and `npm run dev` with `NEXT_PUBLIC_API_URL=http://localhost:8000/api` in `.env.local`.
